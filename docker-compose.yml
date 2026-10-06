@@ -1,0 +1,33 @@
+# Metadata version: runs alongside the original cv-ocr container on the same server.
+# Everything is renamed so the two never collide: project, container, image, port, token volume.
+name: cv-ocr-metadata
+
+services:
+  cv-ocr:
+    build:
+      context: .
+      args:
+        OCR_LANG: ${OCR_LANG:-fr}
+        PADDLE_DEVICE: cpu
+    image: cv-ocr-metadata:cpu
+    container_name: cv-ocr-metadata
+    env_file: .env
+    ports:
+      - "8001:8000"             # the original container keeps 8000
+    volumes:
+      - ./secrets:/secrets:ro   # service-account / gcloud credentials (mode 2)
+      - cv-ocr-data:/data       # OAuth sign-in token (mode 1); stored as cv-ocr-metadata_cv-ocr-data
+      - ./logs:/logs            # app.log, errors.log, jobs.jsonl; survive rebuilds (chown 1000:1000)
+    restart: unless-stopped
+    logging:                    # cap `docker compose logs` so it can't fill the disk
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+volumes:
+  cv-ocr-data:

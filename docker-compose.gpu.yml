@@ -1,0 +1,17 @@
+# GPU servers: layer this on top of docker-compose.yml
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d --build
+# Requires the NVIDIA driver and NVIDIA Container Toolkit on the host.
+services:
+  cv-ocr:
+    build:
+      args:
+        PADDLE_DEVICE: gpu
+        CUDA_TAG: ${CUDA_TAG:-cu126}
+    image: cv-ocr-metadata:gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
